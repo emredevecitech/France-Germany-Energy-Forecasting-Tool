@@ -8,6 +8,14 @@ import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime, timedelta
 import time
+import sys
+import os
+
+# Add the project root to the path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# Import the forecasting engine
+from forecasting_engine import ForecastingEngine
 
 # Page configuration
 st.set_page_config(
@@ -54,9 +62,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-@st.cache_data
+@st.cache_data(ttl=300)  # Cache for 5 minutes
 def generate_forecast_data():
-    """Generate synthetic forecast data"""
+    """Generate forecast data using real energy data"""
     # Create 48-hour forecast
     start_time = datetime.now()
     forecast_times = pd.date_range(start=start_time, periods=48, freq='h')

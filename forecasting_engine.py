@@ -14,7 +14,7 @@ from threading import Thread
 # Import all forecasting modules
 from data_collectors.entsoe_client import ENTSOEClient
 from data_collectors.weather_client import WeatherClient
-from data_collectors.free_data_client import FreeDataClient
+from data_collectors.real_data_client import RealDataClient
 from forecasting.solar_forecaster import SolarForecaster
 from forecasting.nuclear_monitor import NuclearMonitor
 from forecasting.price_forecaster import PriceForecaster
@@ -32,7 +32,7 @@ class ForecastingEngine:
         # Initialize all components
         self.entsoe_client = ENTSOEClient()
         self.weather_client = WeatherClient()
-        self.free_data_client = FreeDataClient()
+        self.real_data_client = RealDataClient()
         self.solar_forecaster = SolarForecaster()
         self.nuclear_monitor = NuclearMonitor()
         self.price_forecaster = PriceForecaster()
@@ -74,41 +74,16 @@ class ForecastingEngine:
     def _load_historical_data(self):
         """Load historical data for model training"""
         try:
-            logger.info("Loading historical data using free data sources...")
+            logger.info("Loading historical data from real energy data...")
             
-            # Load data for the last 30 days
-            end_date = datetime.now()
-            start_date = end_date - timedelta(days=30)
+            # Use real data client for all data
+            self.historical_data = self.real_data_client.load_historical_data()
             
-            # Use free data client for all data
-            self.historical_data['france_prices'] = self.free_data_client.get_synthetic_energy_data(
-                'france', start_date, end_date
-            )
-            self.historical_data['germany_prices'] = self.free_data_client.get_synthetic_energy_data(
-                'germany', start_date, end_date
-            )
-            self.historical_data['cross_border_flows'] = self.free_data_client.get_cross_border_flows(
-                start_date, end_date
-            )
-            self.historical_data['france_generation'] = self.free_data_client.get_synthetic_energy_data(
-                'france', start_date, end_date
-            )
-            self.historical_data['germany_generation'] = self.free_data_client.get_synthetic_energy_data(
-                'germany', start_date, end_date
-            )
-            self.historical_data['nuclear_capacity'] = self.free_data_client.get_synthetic_energy_data(
-                'france', start_date, end_date
-            )
+            if not self.historical_data:
+                logger.warning("No historical data available from real data sources")
+                return
             
-            # Load weather data
-            self.historical_data['france_weather'] = self.free_data_client.get_weather_data(
-                *self.france_coords, start_date, end_date
-            )
-            self.historical_data['germany_weather'] = self.free_data_client.get_weather_data(
-                *self.germany_coords, start_date, end_date
-            )
-            
-            logger.info("Historical data loaded successfully using free data sources")
+            logger.info("Historical data loaded successfully from real energy data")
             
         except Exception as e:
             logger.error(f"Error loading historical data: {e}")
@@ -215,13 +190,18 @@ class ForecastingEngine:
                 freq='h'
             )[1:]  # Exclude current time
             
-            # Get weather forecast using free data
-            france_weather_forecast = self.free_data_client.get_weather_data(
-                *self.france_coords, start_time, start_time + timedelta(days=3)
-            )
-            germany_weather_forecast = self.free_data_client.get_weather_data(
-                *self.germany_coords, start_time, start_time + timedelta(days=3)
-            )
+            # Get weather forecast using real data
+            weather_forecast = self.real_data_client.get_weather_forecast(hours_ahead)
+            france_weather_forecast = weather_forecast[['datetime', 'france_temperature', 'france_cloud_cover', 'france_solar_irradiance']].rename(columns={
+                'france_temperature': 'temperature',
+                'france_cloud_cover': 'cloud_cover', 
+                'france_solar_irradiance': 'solar_irradiance'
+            })
+            germany_weather_forecast = weather_forecast[['datetime', 'germany_temperature', 'germany_cloud_cover', 'germany_solar_irradiance']].rename(columns={
+                'germany_temperature': 'temperature',
+                'germany_cloud_cover': 'cloud_cover',
+                'germany_solar_irradiance': 'solar_irradiance'
+            })
             
             # Solar generation forecast
             solar_forecast = self.solar_forecaster.predict(france_weather_forecast)
