@@ -191,7 +191,7 @@ class ForecastingEngine:
             )[1:]  # Exclude current time
             
             # Get weather forecast using real data
-            weather_forecast = self.real_data_client.get_weather_forecast(hours_ahead)
+            weather_forecast = self.real_data_client.get_weather_forecast(self.forecast_horizon)
             france_weather_forecast = weather_forecast[['datetime', 'france_temperature', 'france_cloud_cover', 'france_solar_irradiance']].rename(columns={
                 'france_temperature': 'temperature',
                 'france_cloud_cover': 'cloud_cover', 

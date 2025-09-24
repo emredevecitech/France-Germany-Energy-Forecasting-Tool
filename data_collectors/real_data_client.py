@@ -93,7 +93,9 @@ class RealDataClient:
                 'france_to_germany': (france_data['total_generation'] - france_data['demand']) * 0.1,
                 'germany_to_france': (germany_data['total_generation'] - germany_data['demand']) * 0.1,
                 'net_flow': (france_data['total_generation'] - france_data['demand']) * 0.1 - 
-                           (germany_data['total_generation'] - germany_data['demand']) * 0.1
+                           (germany_data['total_generation'] - germany_data['demand']) * 0.1,
+                'cross_border_flow': (france_data['total_generation'] - france_data['demand']) * 0.1 - 
+                                   (germany_data['total_generation'] - germany_data['demand']) * 0.1
             })
             
             # Create weather data (synthetic but realistic)
@@ -127,7 +129,9 @@ class RealDataClient:
                          5 * np.sin(2 * np.pi * datetime_series.dt.hour / 24) + np.random.normal(0, 2, len(datetime_series)),
             'cloud_cover': np.random.uniform(20, 80, len(datetime_series)),
             'solar_irradiance': np.maximum(0, 800 * np.sin(np.pi * (datetime_series.dt.hour - 6) / 12) * 
-                                         (1 - np.random.uniform(0, 0.5, len(datetime_series))))
+                                         (1 - np.random.uniform(0, 0.5, len(datetime_series)))),
+            'humidity': np.random.uniform(40, 90, len(datetime_series)),
+            'wind_speed': np.random.uniform(2, 15, len(datetime_series))
         })
         
         # Germany weather (central Europe)
@@ -137,7 +141,9 @@ class RealDataClient:
                          4 * np.sin(2 * np.pi * datetime_series.dt.hour / 24) + np.random.normal(0, 2, len(datetime_series)),
             'cloud_cover': np.random.uniform(30, 90, len(datetime_series)),
             'solar_irradiance': np.maximum(0, 600 * np.sin(np.pi * (datetime_series.dt.hour - 6) / 12) * 
-                                         (1 - np.random.uniform(0, 0.6, len(datetime_series))))
+                                         (1 - np.random.uniform(0, 0.6, len(datetime_series)))),
+            'humidity': np.random.uniform(50, 95, len(datetime_series)),
+            'wind_speed': np.random.uniform(3, 18, len(datetime_series))
         })
         
         return {
