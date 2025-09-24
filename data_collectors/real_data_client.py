@@ -63,6 +63,9 @@ class RealDataClient:
                 axis=1
             )
             
+            # Add solar generation potential (same as solar generation for now)
+            df['solar_generation_potential'] = df['solar_generation']
+            
             # Estimate wind generation (remaining renewable)
             df['wind_generation'] = df['renewable_power'] - df['solar_generation']
             
@@ -176,7 +179,7 @@ class RealDataClient:
             )
             
             # Generate forecast weather data
-            forecast_weather = self._generate_weather_data(forecast_times)
+            forecast_weather = self._generate_weather_data(pd.Series(forecast_times))
             
             # Combine France and Germany weather
             france_forecast = forecast_weather['france'].copy()

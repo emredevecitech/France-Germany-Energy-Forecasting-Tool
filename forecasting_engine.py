@@ -192,16 +192,22 @@ class ForecastingEngine:
             
             # Get weather forecast using real data
             weather_forecast = self.real_data_client.get_weather_forecast(self.forecast_horizon)
-            france_weather_forecast = weather_forecast[['datetime', 'france_temperature', 'france_cloud_cover', 'france_solar_irradiance']].rename(columns={
-                'france_temperature': 'temperature',
-                'france_cloud_cover': 'cloud_cover', 
-                'france_solar_irradiance': 'solar_irradiance'
-            })
-            germany_weather_forecast = weather_forecast[['datetime', 'germany_temperature', 'germany_cloud_cover', 'germany_solar_irradiance']].rename(columns={
-                'germany_temperature': 'temperature',
-                'germany_cloud_cover': 'cloud_cover',
-                'germany_solar_irradiance': 'solar_irradiance'
-            })
+            
+            if not weather_forecast.empty:
+                france_weather_forecast = weather_forecast[['datetime', 'france_temperature', 'france_cloud_cover', 'france_solar_irradiance']].rename(columns={
+                    'france_temperature': 'temperature',
+                    'france_cloud_cover': 'cloud_cover', 
+                    'france_solar_irradiance': 'solar_irradiance'
+                })
+                germany_weather_forecast = weather_forecast[['datetime', 'germany_temperature', 'germany_cloud_cover', 'germany_solar_irradiance']].rename(columns={
+                    'germany_temperature': 'temperature',
+                    'germany_cloud_cover': 'cloud_cover',
+                    'germany_solar_irradiance': 'solar_irradiance'
+                })
+            else:
+                # Create empty dataframes with required columns
+                france_weather_forecast = pd.DataFrame(columns=['datetime', 'temperature', 'cloud_cover', 'solar_irradiance'])
+                germany_weather_forecast = pd.DataFrame(columns=['datetime', 'temperature', 'cloud_cover', 'solar_irradiance'])
             
             # Solar generation forecast
             solar_forecast = self.solar_forecaster.predict(france_weather_forecast)
