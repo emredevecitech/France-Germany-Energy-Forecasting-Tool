@@ -65,75 +65,37 @@ st.markdown("""
 def load_real_data():
     """Load real energy data from CSV"""
     try:
-        # Try the new CSV format first
-        try:
-            df = pd.read_csv("GUI_ENERGY_PRICES_202509222200-202509232200.csv")
-            
-            # Clean column names
-            df.columns = ['datetime', 'area', 'sequence', 'day_ahead_price', 'intraday_period', 'intraday_price']
-            
-            # Parse datetime (extract start time from the period)
-            df['datetime'] = df['datetime'].str.extract(r'(\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2})')[0]
-            df['datetime'] = pd.to_datetime(df['datetime'], format='%d/%m/%Y %H:%M:%S')
-            
-            # Remove rows with missing data
-            df = df.dropna(subset=['day_ahead_price'])
-            
-            # Convert price to numeric
-            df['day_ahead_price'] = pd.to_numeric(df['day_ahead_price'], errors='coerce')
-            df = df.dropna(subset=['day_ahead_price'])
-            
-            # Generate synthetic generation data based on price patterns
-            # Higher prices usually mean higher demand
-            base_demand = 50000  # Base demand in MW
-            price_factor = df['day_ahead_price'] / df['day_ahead_price'].mean()
-            df['demand'] = base_demand * price_factor
-            
-            # Estimate generation mix
-            df['nuclear_generation'] = df['demand'] * 0.3  # 30% nuclear
-            df['solar_generation'] = df.apply(
-                lambda row: df['demand'].mean() * 0.2 * np.sin(np.pi * (row['datetime'].hour - 6) / 12) if 6 <= row['datetime'].hour <= 18 else 0, 
-                axis=1
-            )
-            df['wind_generation'] = df['demand'] * 0.15  # 15% wind
-            df['total_generation'] = df['nuclear_generation'] + df['solar_generation'] + df['wind_generation']
-            
-            return df
-            
-        except Exception as e1:
-            st.warning(f"Could not load new CSV format: {e1}")
-            
-            # Fallback to original CSV format
-            df = pd.read_csv("energy-charts_Electricity_production_and_spot_prices_in_Germany_in_week_39_2025 (1).csv", skiprows=1)
-            
-            # Clean column names
-            df.columns = ['datetime', 'non_renewable_power', 'renewable_power', 'day_ahead_price']
-            
-            # Parse datetime
-            df['datetime'] = pd.to_datetime(df['datetime'])
-            
-            # Remove rows with missing data
-            df = df.dropna(subset=['non_renewable_power', 'renewable_power', 'day_ahead_price'])
-            
-            # Calculate total generation
-            df['total_generation'] = df['non_renewable_power'] + df['renewable_power']
-            
-            # Estimate solar generation (assume 60% of renewable is solar during day, 0% at night)
-            df['solar_generation'] = df.apply(
-                lambda row: row['renewable_power'] * 0.6 if 6 <= row['datetime'].hour <= 18 else 0, 
-                axis=1
-            )
-            
-            # Estimate wind generation (remaining renewable)
-            df['wind_generation'] = df['renewable_power'] - df['solar_generation']
-            
-            # Estimate nuclear generation (assume 20% of non-renewable is nuclear)
-            df['nuclear_generation'] = df['non_renewable_power'] * 0.2
-            
-            # Estimate demand (total generation + 5% losses)
-            df['demand'] = df['total_generation'] * 1.05
-            
-            return df
+        # Use only the original CSV file
+        df = pd.read_csv("energy-charts_Electricity_production_and_spot_prices_in_Germany_in_week_39_2025 (1).csv", skiprows=1)
+        
+        # Clean column names
+        df.columns = ['datetime', 'non_renewable_power', 'renewable_power', 'day_ahead_price']
+        
+        # Parse datetime
+        df['datetime'] = pd.to_datetime(df['datetime'])
+        
+        # Remove rows with missing data
+        df = df.dropna(subset=['non_renewable_power', 'renewable_power', 'day_ahead_price'])
+        
+        # Calculate total generation
+        df['total_generation'] = df['non_renewable_power'] + df['renewable_power']
+        
+        # Estimate solar generation (assume 60% of renewable is solar during day, 0% at night)
+        df['solar_generation'] = df.apply(
+            lambda row: row['renewable_power'] * 0.6 if 6 <= row['datetime'].hour <= 18 else 0, 
+            axis=1
+        )
+        
+        # Estimate wind generation (remaining renewable)
+        df['wind_generation'] = df['renewable_power'] - df['solar_generation']
+        
+        # Estimate nuclear generation (assume 20% of non-renewable is nuclear)
+        df['nuclear_generation'] = df['non_renewable_power'] * 0.2
+        
+        # Estimate demand (total generation + 5% losses)
+        df['demand'] = df['total_generation'] * 1.05
+        
+        return df
         
     except Exception as e:
         st.error(f"Error loading data: {e}")
